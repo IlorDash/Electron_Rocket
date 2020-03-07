@@ -1,7 +1,7 @@
 [PreviousGenFiles]
-HeaderPath=D:/Projects/STM32/BMP_280 Nucleo_L031K6/Inc
+HeaderPath=D:/Projects/Electron_Rocket/BMP_280 Nucleo_L031K6/Inc
 HeaderFiles=stm32l0xx_it.h;stm32l0xx_hal_conf.h;main.h;
-SourcePath=D:/Projects/STM32/BMP_280 Nucleo_L031K6/Src
+SourcePath=D:/Projects/Electron_Rocket/BMP_280 Nucleo_L031K6/Src
 SourceFiles=stm32l0xx_it.c;stm32l0xx_hal_msp.c;main.c;
 
 [PreviousLibFiles]

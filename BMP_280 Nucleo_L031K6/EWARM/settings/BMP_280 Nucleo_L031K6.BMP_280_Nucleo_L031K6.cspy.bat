@@ -25,7 +25,7 @@ if not "%~1" == "" goto debugFile
 
 @echo on 
 
-"C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.3\common\bin\cspybat" -f "D:\Projects\STM32\BMP_280 Nucleo_L031K6\EWARM\settings\BMP_280 Nucleo_L031K6.BMP_280_Nucleo_L031K6.general.xcl" --backend -f "D:\Projects\STM32\BMP_280 Nucleo_L031K6\EWARM\settings\BMP_280 Nucleo_L031K6.BMP_280_Nucleo_L031K6.driver.xcl" 
+"C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.3\common\bin\cspybat" -f "D:\Projects\Electron_Rocket\BMP_280 Nucleo_L031K6\EWARM\settings\BMP_280 Nucleo_L031K6.BMP_280_Nucleo_L031K6.general.xcl" --backend -f "D:\Projects\Electron_Rocket\BMP_280 Nucleo_L031K6\EWARM\settings\BMP_280 Nucleo_L031K6.BMP_280_Nucleo_L031K6.driver.xcl" 
 
 @echo off 
 goto end 
@@ -34,7 +34,7 @@ goto end
 
 @echo on 
 
-"C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.3\common\bin\cspybat" -f "D:\Projects\STM32\BMP_280 Nucleo_L031K6\EWARM\settings\BMP_280 Nucleo_L031K6.BMP_280_Nucleo_L031K6.general.xcl" "--debug_file=%~1" --backend -f "D:\Projects\STM32\BMP_280 Nucleo_L031K6\EWARM\settings\BMP_280 Nucleo_L031K6.BMP_280_Nucleo_L031K6.driver.xcl" 
+"C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.3\common\bin\cspybat" -f "D:\Projects\Electron_Rocket\BMP_280 Nucleo_L031K6\EWARM\settings\BMP_280 Nucleo_L031K6.BMP_280_Nucleo_L031K6.general.xcl" "--debug_file=%~1" --backend -f "D:\Projects\Electron_Rocket\BMP_280 Nucleo_L031K6\EWARM\settings\BMP_280 Nucleo_L031K6.BMP_280_Nucleo_L031K6.driver.xcl" 
 
 @echo off 
 :end
