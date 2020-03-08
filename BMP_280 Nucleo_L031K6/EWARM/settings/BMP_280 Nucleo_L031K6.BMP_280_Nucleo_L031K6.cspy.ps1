@@ -23,9 +23,9 @@
 
 if ($debugfile -eq "")
 {
-& "C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.3\common\bin\cspybat" -f "D:\Projects\Electron_Rocket\BMP_280 Nucleo_L031K6\EWARM\settings\BMP_280 Nucleo_L031K6.BMP_280_Nucleo_L031K6.general.xcl" --backend -f "D:\Projects\Electron_Rocket\BMP_280 Nucleo_L031K6\EWARM\settings\BMP_280 Nucleo_L031K6.BMP_280_Nucleo_L031K6.driver.xcl" 
+& "C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.3\common\bin\cspybat" -f "D:\Projects\Новая папка\BMP_280 Nucleo_L031K6\EWARM\settings\BMP_280 Nucleo_L031K6.BMP_280_Nucleo_L031K6.general.xcl" --backend -f "D:\Projects\Новая папка\BMP_280 Nucleo_L031K6\EWARM\settings\BMP_280 Nucleo_L031K6.BMP_280_Nucleo_L031K6.driver.xcl" 
 }
 else
 {
-& "C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.3\common\bin\cspybat" -f "D:\Projects\Electron_Rocket\BMP_280 Nucleo_L031K6\EWARM\settings\BMP_280 Nucleo_L031K6.BMP_280_Nucleo_L031K6.general.xcl" --debug_file=$debugfile --backend -f "D:\Projects\Electron_Rocket\BMP_280 Nucleo_L031K6\EWARM\settings\BMP_280 Nucleo_L031K6.BMP_280_Nucleo_L031K6.driver.xcl" 
+& "C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.3\common\bin\cspybat" -f "D:\Projects\Новая папка\BMP_280 Nucleo_L031K6\EWARM\settings\BMP_280 Nucleo_L031K6.BMP_280_Nucleo_L031K6.general.xcl" --debug_file=$debugfile --backend -f "D:\Projects\Новая папка\BMP_280 Nucleo_L031K6\EWARM\settings\BMP_280 Nucleo_L031K6.BMP_280_Nucleo_L031K6.driver.xcl" 
 }
