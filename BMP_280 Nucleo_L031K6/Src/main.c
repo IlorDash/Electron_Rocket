@@ -30,6 +30,8 @@
 /* USER CODE BEGIN PTD */
 #define MEASURMENTS_NUM 50
 #define NUM_OF_FLASH_CELLS 2048
+#include <string.h>
+#include <stdio.h>
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -51,8 +53,8 @@ BMP280_HandleTypedef bmp280;
 /* USER CODE BEGIN PV */
 float pressure, temperature, humidity;
 
-int32_t data_to_flash;
-uint8_t data_to_uart[4];
+uint32_t data_to_flash;
+uint8_t data_to_uart[128];
 uint16_t size_to_uart;
 float altitude_0 = 0;
 float altitude_above_ground = 0;
@@ -208,29 +210,40 @@ int main(void)
         altitude_above_ground_prev = altitude_0;
         i = 0;
         while (i < NUM_OF_FLASH_CELLS) {
-		HAL_Delay(100);
+		HAL_Delay(99);
 		while (!bmp280_read_float(&bmp280, &temperature, &pressure, &humidity)) {
 			HAL_Delay(2000);
 		}
 		altitude_above_ground = calculate_altitude(temperature, pressure) - altitude_0;
                 //altitude_to_flash = (altitude_above_ground - altitude_above_ground_prev);
-                data_to_flash = (int)(altitude_above_ground - altitude_above_ground_prev+1);   //PROBLEM: non correct decreasing float from float
+                int16_t val = (int)(altitude_above_ground - altitude_above_ground_prev+1);   //PROBLEM: non correct decreasing float from float
                 altitude_above_ground_prev = altitude_above_ground;
                 
-                SaveFlashData(0x0800D000 + i, &data_to_flash, 1);   //PROBLEM: going to HardFault_Handler from mscmp bool variable
-                i += sizeof(uint32_t);
+                bool isOddIter = (i & 0x0001) != 0;
+                if(isOddIter) {
+                  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+                  data_to_flash = data_to_flash + ((val << 16) & 0xFFFF0000);
+                  SaveFlashData(0x08006000 + ((i-1) * sizeof(uint32_t)), &data_to_flash, 1);   //PROBLEM: going to HardFault_Handler from mscmp bool variable
+		HAL_Delay(2);
+                  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+                } else {
+                  data_to_flash = val & 0x0000FFFF;
+                }                
+                i++;
 	}
     }
     else {
       status = "transmiting to UART";
       i = 0;
-      while (i < NUM_OF_FLASH_CELLS)
-        
-         //size_to_uart = sprintf((char *)data_to_uart,"%d\n", flash_read(0x0800D000 + i));
-         size_to_uart = sprintf((char *)data_to_uart,"aa%d\n", i);
+      while (i < NUM_OF_FLASH_CELLS) {
+         data_to_flash = *(__IO uint32_t*)(0x08006000 + (i * sizeof(uint32_t)));
+         int16_t val0 =  (int16_t)(data_to_flash & 0x0000FFFF);
+         int16_t val1 =  (int16_t)((data_to_flash >> 16) & 0x0000FFFF);
+      
+         size_to_uart = sprintf((char *)data_to_uart, "[%05d] val0:%d, val1:%d\n", i, val0, val1);
          HAL_UART_Transmit(&huart2, data_to_uart, size_to_uart, 100);
-         i += sizeof(uint32_t);
-     
+         i++;
+      }
     }
 
 
