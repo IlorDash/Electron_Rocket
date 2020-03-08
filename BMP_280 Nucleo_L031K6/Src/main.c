@@ -51,7 +51,7 @@ BMP280_HandleTypedef bmp280;
 /* USER CODE BEGIN PV */
 float pressure, temperature, humidity;
 
-uint32_t data_to_flash;
+int32_t data_to_flash;
 uint8_t data_to_uart[4];
 uint16_t size_to_uart;
 float altitude_0 = 0;
@@ -178,6 +178,11 @@ int main(void)
   
       //MAIN CONDITION
     if (currentButtonState == GPIO_PIN_RESET) {
+        HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+        HAL_Delay(1000);
+        HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+        HAL_Delay(500);
+        HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
         status = "measurment";
       	bmp280_init_user_params(&bmp280.params);
 	bmp280.addr = BMP280_I2C_ADDRESS_0;
@@ -208,10 +213,11 @@ int main(void)
 			HAL_Delay(2000);
 		}
 		altitude_above_ground = calculate_altitude(temperature, pressure) - altitude_0;
-                altitude_to_flash = (altitude_above_ground - altitude_above_ground_prev)*10;
+                //altitude_to_flash = (altitude_above_ground - altitude_above_ground_prev);
+                data_to_flash = (int)(altitude_above_ground - altitude_above_ground_prev+1);   //PROBLEM: non correct decreasing float from float
                 altitude_above_ground_prev = altitude_above_ground;
-                data_to_flash = altitude_to_flash;
-                //SaveFlashData(0x0800D000 + i, &data_to_flash, 1);
+                
+                SaveFlashData(0x0800D000 + i, &data_to_flash, 1);   //PROBLEM: going to HardFault_Handler from mscmp bool variable
                 i += sizeof(uint32_t);
 	}
     }
