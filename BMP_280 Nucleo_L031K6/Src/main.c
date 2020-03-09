@@ -239,7 +239,7 @@ int main(void)
          int16_t val0 =  (int16_t)(data_to_flash & 0x0000FFFF);
          int16_t val1 =  (int16_t)((data_to_flash >> 16) & 0x0000FFFF);
       
-         size_to_uart = sprintf((char *)data_to_uart, "[%05d] val0:%06d, val1:%06d\n", i, val0, val1);
+         size_to_uart = sprintf((char *)data_to_uart, "%05d  %06d  %06d\n", i, val0, val1);
          HAL_UART_Transmit(&huart2, data_to_uart, size_to_uart, 100);
          HAL_Delay(30);
          i++;
