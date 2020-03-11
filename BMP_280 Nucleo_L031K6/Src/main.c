@@ -177,13 +177,6 @@ int main(void)
   
       //MAIN CONDITION
     if (currentButtonState == GPIO_PIN_RESET) {
-        HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
-        HAL_Delay(1000);
-        HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
-        HAL_Delay(500);
-        HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
-        HAL_Delay(1000);
-        HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
         status = "measurment";
       	bmp280_init_user_params(&bmp280.params);
 	bmp280.addr = BMP280_I2C_ADDRESS_0;
@@ -192,6 +185,13 @@ int main(void)
 	while (!bmp280_init(&bmp280, &bmp280.params)) {
 		HAL_Delay(2000);
 	}
+        HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+        HAL_Delay(1000);
+        HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+        HAL_Delay(500);
+        HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+        HAL_Delay(1000);
+        HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
 	//bool bme280p = bmp280.id == BME280_CHIP_ID;
 
 	// findind null altitude
@@ -208,6 +208,13 @@ int main(void)
 	altitude_0 = altitude_t / MEASURMENTS_NUM;
         //altitude_above_ground_prev = altitude_0;
         i = 0;
+        HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+        HAL_Delay(1000);
+        HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+        HAL_Delay(500);
+        HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+        HAL_Delay(1000);
+        HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
         while (i < NUM_OF_FLASH_CELLS) {
 		HAL_Delay(99);
 		while (!bmp280_read_float(&bmp280, &temperature, &pressure, &humidity)) {
