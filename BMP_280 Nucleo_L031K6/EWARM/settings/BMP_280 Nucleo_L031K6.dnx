@@ -14,13 +14,13 @@
     <StLinkDriver>
         <stlinkserialNo>67183014</stlinkserialNo>
         <stlinkfoundProbes />
-        <stlinkResetStyle>4</stlinkResetStyle>
+        <stlinkResetStyle>0</stlinkResetStyle>
         <stlinkResetStrategy>2</stlinkResetStrategy>
         <CStepIntDis>_ 0</CStepIntDis>
         <LeaveTargetRunning>_ 0</LeaveTargetRunning>
     </StLinkDriver>
     <DebugChecksum>
-        <Checksum>310604710</Checksum>
+        <Checksum>1202892085</Checksum>
     </DebugChecksum>
     <Exceptions>
         <StopOnUncaught>_ 0</StopOnUncaught>
@@ -58,7 +58,7 @@
     </Breakpoints2>
     <Aliases>
         <A0>_ "D:\Projects\Новая папка\BMP_280 Nucleo_L031K6\Drivers\STM32L0xx_HAL_Driver\Src\stm32l0xx_hal_uart.c" ""</A0>
-        <A1>_ "D:\Projects\Новая папка\BMP_280 Nucleo_L031K6\EWARM\startup_stm32l031xx.s" ""</A1>
+        <A1>_ "D:\Projects\Новая папка\BMP_280 Nucleo_L031K6\EWARM\startup_stm32l031xx.s" "D:\Projects\Electron_Rocket\BMP_280 Nucleo_L031K6\EWARM\startup_stm32l031xx.s"</A1>
         <Count>2</Count>
         <SuppressDialog>0</SuppressDialog>
     </Aliases>

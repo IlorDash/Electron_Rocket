@@ -29,7 +29,7 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 #define MEASURMENTS_NUM 50
-#define NUM_OF_FLASH_CELLS 2048
+#define NUM_OF_FLASH_CELLS 4096
 #include <string.h>
 #include <stdio.h>
 /* USER CODE END PTD */
@@ -208,6 +208,7 @@ int main(void)
 	altitude_0 = altitude_t / MEASURMENTS_NUM;
         //altitude_above_ground_prev = altitude_0;
         i = 0;
+        int j = 1;
         HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
         HAL_Delay(1000);
         HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
@@ -222,15 +223,13 @@ int main(void)
 		}
 		altitude_above_ground = calculate_altitude(temperature, pressure);
                 int16_t val = (int)((altitude_above_ground - altitude_0)*100);  
-                //altitude_above_ground_prev = altitude_above_ground;
                 
                 bool isOddIter = (i & 0x0001) != 0;
                 if(isOddIter) {
-                  //HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
                   data_to_flash = data_to_flash + ((val << 16) & 0xFFFF0000);
-                  SaveFlashData(0x08006000 + ((i-1) * sizeof(uint32_t)), &data_to_flash, 1);   //PROBLEM: going to HardFault_Handler from mscmp bool variable
+                  SaveFlashData(0x08006000 + ((i-j) * sizeof(uint32_t)), &data_to_flash, 1);   
+                  j++;
 		HAL_Delay(2);
-                  //HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
                 } else {
                   data_to_flash = val & 0x0000FFFF;
                 }                
@@ -246,9 +245,9 @@ int main(void)
          int16_t val0 =  (int16_t)(data_to_flash & 0x0000FFFF);
          int16_t val1 =  (int16_t)((data_to_flash >> 16) & 0x0000FFFF);
       
-         size_to_uart = sprintf((char *)data_to_uart, "%05d  %06d  %06d\n", i, val0, val1);
+         size_to_uart = sprintf((char *)data_to_uart, "%05d  %06d  %06d \n", i, val0, val1);
          HAL_UART_Transmit(&huart2, data_to_uart, size_to_uart, 100);
-         HAL_Delay(30);
+         HAL_Delay(100);
          i++;
       }
     }
