@@ -34,24 +34,6 @@
   
   You can control framesize (UXGA, VGA, ...), quality, length, and fps to record, and fps to playback later, etc.
 
-  There is also an ftp server to download the recordings to a PC.
-
-  Instructions:
-
-  The program uses a fixed IP of 192.168.1.222, so you can browse to it from your phone or computer.
-  
-  http://192.168.1.222/ -- this gives you the status of the recording in progress and lets you look through the viewfinder
-
-  http://192.168.1.222/stop -- this stops the recording in progress and displays some sample commands to start new recordings
-
-  ftp://192.168.1.222/ -- gives you the ftp server
-
-  The ftp for esp32 seems to not be a full ftp.  The Chrome Browser and the Windows command line ftp's did not work with this, but
-  the Raspbarian command line ftp works fine, and an old Windows ftp I have called CoffeeCup Free FTP also works, which is what I have been using.
-  You can download at about 450 KB/s -- which is better than having to retreive the SD chip if you camera is up in a tree!
-  
-  http://192.168.1.222/start?framesize=VGA&length=1800&interval=250&quality=10&repeat=100&speed=1&gray=0  -- this is a sample to start a new recording
-
   framesize can be UXGA, SVGA, VGA, CIF (default VGA)
   length is length in seconds of the recording 0..3600 (default 1800)
   interval is the milli-seconds between frames (default 200)
@@ -82,22 +64,7 @@
 
 
 
-/*//#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
-#include "esp_log.h"
-#include "esp_http_server.h"*/
 #include "esp_camera.h"
-/*//#include <WiFi.h>   // redundant
-
-#include "ESP32FtpServer.h"
-#include <HTTPClient.h>
-
-FtpServer ftpSrv;   //set #define FTP_DEBUG in ESP32FtpServer.h to see ftp verbose on serial
-
-
-// Time
-#include "time.h"
-#include "lwip/err.h"
-#include "lwip/apps/sntp.h"*/
 
 // MicroSD
 #include "driver/sdmmc_host.h"
@@ -105,6 +72,8 @@ FtpServer ftpSrv;   //set #define FTP_DEBUG in ESP32FtpServer.h to see ftp verbo
 #include "sdmmc_cmd.h"
 #include "SD_MMC.h"
 #include "esp_vfs_fat.h"
+
+//#define LED_BUILTIN 4 //define for flash light
 
 long current_millis;
 long last_capture_millis = 0;
@@ -153,13 +122,7 @@ int overtime_count = 0;
 // GLOBALS
 #define BUFFSIZE 512
 
-//
-// 
-// EDIT ssid and password
-//
-// zzz
-const char* ssid = "ordash";
-const char* password = "or14591711!";
+
 
 // these are just declarations -- look below to edit defaults 
 
@@ -231,60 +194,25 @@ static void inline print_quartet(unsigned long i, FILE * fd)
   size_t i4_err = fwrite(x , 1, 1, fd);
 }
 
-
-//void startCameraServer();
-//httpd_handle_t camera_httpd = NULL;
-
 char the_page[3000];
-
-//char localip[20];
-//WiFiEventId_t eventID;
 
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
 
 
 void setup() {
-  //WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector  // creates other problems
+
 
   Serial.begin(115200);
 
   Serial.setDebugOutput(true);
   
- /* // zzz
-  Serial.println("                                    ");
-  Serial.println("-------------------------------------");
-  Serial.println("ESP-CAM Video Recorder v23");
-  Serial.println(" ip 192.168.1.222 ");
-  Serial.println("-------------------------------------");*/
+
 
   pinMode(33, OUTPUT);    // little red led on back of chip
+  //pinMode (LED_BUILTIN, OUTPUT); // flash light
 
   digitalWrite(33, LOW);           // turn on the red LED on the back of chip
-
-  /*eventID = WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
-    Serial.print("WiFi lost connection. Reason: ");
-    Serial.println(info.disconnected.reason);
-
-    if (WiFi.status() == WL_CONNECTED) {
-      Serial.println("*** connected/disconnected issue!   WiFi disconnected ???...");
-      WiFi.disconnect();
-    } else {
-      Serial.println("*** WiFi disconnected ???...");
-    }
-  }, WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
-
-
-  if (init_wifi()) { // Connected to WiFi
-    internet_connected = true;
-    Serial.println("Internet connected");
-    init_time();
-    time(&now);
-    //setenv("TZ", "GMT0BST,M3.5.0/01,M10.5.0/02", 1);
-    // zzz
-    setenv("TZ", "MST7MDT,M3.2.0/2:00:00,M11.1.0/2:00:00", 1);  // mountain time zone
-    tzset();
-  }*/
 
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
@@ -340,18 +268,6 @@ void setup() {
   // 20 ms x 3000 frames = 10 minute      is 60 MB indoor
   // burst 1000 frames gives 8 fps rather than 5, so 2 minutues 20 MB indoor
 
-  /*startCameraServer();
-
-  Serial.print("Camera Ready! Use 'http://");
-  Serial.print(WiFi.localIP());
-  Serial.println("' to connect");
-
-  sprintf(localip, "%s", WiFi.localIP().toString().c_str());
-  Serial.print("localip "); Serial.println(localip);
-
-  // zzz username and password for ftp server
-  
-  ftpSrv.begin("esp", "esp");*/
   digitalWrite(33, HIGH);
 
 
@@ -366,13 +282,13 @@ void setup() {
   do_fb();
 
   framesize = 6;            // vga
-  repeat = 1;             // video + 1
+  repeat = 0;             // video + 1
   xspeed = 1;               // playback at 1 x realtime
   gray = 0;                 // not gray
 
   quality = 10;             // quality 10 - pretty good.  Goes from 0..63, but 0-5 sometimes fails on bright scenery (jpg too big for ESP32CAM system)
-  capture_interval = 32;   //  milli-secconds per frame
-  total_frames = 1875;       // total_frames x capture_interval = record_time
+  capture_interval = 66;   //  milli-secconds per frame
+  total_frames = 937;       // total_frames x capture_interval = record_time
   
   xlength = total_frames * capture_interval / 1000;
 
@@ -421,66 +337,6 @@ void major_fail() {
     delay(1000);
   }
 }
-
-
-/*bool init_wifi()
-{
-  int connAttempts = 0;
-
-  // zzz
-  // Set your Static IP address
-  IPAddress local_IP(192, 168, 1, 222);
-  
-  // Set your Gateway IP address
-  IPAddress gateway(192, 168, 1, 254);
-
-  IPAddress subnet(255, 255, 0, 0);
-  IPAddress primaryDNS(8, 8, 8, 8); // optional
-  IPAddress secondaryDNS(8, 8, 4, 4); // optional
-
-   WiFi.setHostname("ESP32CAM-222");  // does not seem to do anything with my wifi router ???
-
-  if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
-    Serial.println("STA Failed to configure");
-    major_fail();
-  }
-
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED ) {
-    delay(500);
-    Serial.print(".");
-    if (connAttempts > 10) return false;
-    connAttempts++;
-  }
-  return true;
-}
-
-void init_time()
-{
-
-  sntp_setoperatingmode(SNTP_OPMODE_POLL);
-  sntp_setservername(0, "pool.ntp.org");
-  sntp_setservername(1, "time.windows.com");
-  sntp_setservername(2, "time.nist.gov");
-
-  sntp_init();
-  
-  // wait for time to be set
-  time_t now = 0;
-  timeinfo = { 0 };
-  int retry = 0;
-  const int retry_count = 10;
-  while (timeinfo.tm_year < (2016 - 1900) && ++retry < retry_count) {
-    Serial.printf("Waiting for system time to be set... (%d/%d) -- %d\n", retry, retry_count, timeinfo.tm_year);
-    delay(2000);
-    time(&now);
-    localtime_r(&now, &timeinfo);
-  }
-
-  if (timeinfo.tm_year < (2016 - 1900)) {
-    major_fail();
-  }
-}*/
 
 static esp_err_t init_sdcard()
 {
@@ -1016,7 +872,6 @@ static esp_err_t end_avi() {
 //  WiFi.printDiag(Serial);
   Serial.println("---");
   
-  //do_time();
 }
 
 //~~~~~~~~~~~~~~~~~~
@@ -1027,43 +882,6 @@ static esp_err_t do_fb() {
   Serial.print("Pic, len="); Serial.println(fb->len);
 
   esp_camera_fb_return(fb);
-}
-
-void do_time() {
-  //Serial.println(" ... wake up wifi stack ... ");
-
-  //WiFi.reconnect();
-
-  /*
-    int numberOfNetworks = WiFi.scanNetworks();
-
-    Serial.print("Number of networks found: ");
-    Serial.println(numberOfNetworks);
-
-
-    HTTPClient http_wake;
-
-    http_wake.begin("http://postman-echo.com/time/now");
-    //http_wake.begin("http://192.168.1.254");
-
-    //http_wake.begin("http://google.com");
-
-    int httpCode = http_wake.GET();                                   
-
-    if (httpCode > 0) { //Check for the returning code
-
-    String payload = http_wake.getString();
-    Serial.println(httpCode);
-    Serial.println(payload);
-    }
-
-    else {
-    Serial.println("Error on HTTP request");
-    }
-
-    http_wake.end(); //Free the resources)
-  */
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -1077,419 +895,7 @@ long last_wakeup = 0;
 
 void loop()
 {
-
-  /*if (WiFi.status() != WL_CONNECTED) {
-    init_wifi();
-    Serial.println("***** WiFi reconnect *****");
-  }
-
-  wakeup = millis();
-  if (wakeup - last_wakeup > (10 * 60 * 1000) ) {       // 10 minutes
-    last_wakeup = millis();
-
-    //init_wifi();
-    //Serial.println("... wakeup call ...");
-    //do_time();
-  }
-
-
-  ftpSrv.handleFTP();*/
-
+  //digitalWrite(LED_BUILTIN, LOW); //flash light
   make_avi();
 
 }
-
-
-////////////////////////////////////////////////////////////////////////////////////
-/*static esp_err_t capture_handler(httpd_req_t *req) {
-
-  camera_fb_t * fb = NULL;
-  esp_err_t res = ESP_OK;
-  char fname[100];
-
-  fb = esp_camera_fb_get();
-  if (!fb) {
-    Serial.println("Camera capture failed");
-    httpd_resp_send_500(req);
-    return ESP_FAIL;
-  }
-
-  file_number++;
-
-  sprintf(fname, "inline; filename=capture_%d.jpg", file_number);
-
-  httpd_resp_set_type(req, "image/jpeg");
-  httpd_resp_set_hdr(req, "Content-Disposition", fname);
-
-  size_t out_len, out_width, out_height;
-  size_t fb_len = 0;
-  fb_len = fb->len;
-  res = httpd_resp_send(req, (const char *)fb->buf, fb->len);
-  esp_camera_fb_return(fb);
-
-  return res;
-}
-
-////////////////////////////////////////////////////////////////////////////////////
-static esp_err_t stop_handler(httpd_req_t *req) {
-
-  esp_err_t res = ESP_OK;
-
-  recording = 0;
-  Serial.println("stopping recording");
-
-  do_stop("Stopping previous recording");
-
-  httpd_resp_send(req, the_page, strlen(the_page));
-  return ESP_OK;
-
-}
-
-////////////////////////////////////////////////////////////////////////////////////
-static esp_err_t start_handler(httpd_req_t *req) {
-
-  esp_err_t res = ESP_OK;
-
-  char  buf[80];
-  size_t buf_len;
-  char  new_res[20];
-
-  if (recording == 1) {
-    const char* resp = "You must Stop recording, before starting a new one.  Start over ...";
-    httpd_resp_send(req, resp, strlen(resp));
-
-    return ESP_OK;
-    return res;
-
-  } else {
-    recording = 1;
-    Serial.println("starting recording");
-
-    sensor_t * s = esp_camera_sensor_get();
-
-    int new_interval = capture_interval;
-    int new_length = capture_interval * total_frames;
-
-    int new_framesize = s->status.framesize;
-    int new_quality = s->status.quality;
-    int new_repeat = 0;
-    int new_xspeed = 1;
-    int new_xlength = 3;
-    int new_gray = 0;
-
-    Serial.println("");
-    Serial.println("Current Parameters :");
-    Serial.print("  Capture Interval = "); Serial.print(capture_interval);  Serial.println(" ms");
-    Serial.print("  Length = "); Serial.print(capture_interval * total_frames / 1000); Serial.println(" s");
-    Serial.print("  Quality = "); Serial.println(new_quality);
-    Serial.print("  Framesize = "); Serial.println(new_framesize);
-    Serial.print("  Repeat = "); Serial.println(repeat);
-    Serial.print("  Speed = "); Serial.println(xspeed);
-
-    buf_len = httpd_req_get_url_query_len(req) + 1;
-    if (buf_len > 1) {
-      if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK) {
-        ESP_LOGI(TAG, "Found URL query => %s", buf);
-        char param[32];
-        // Get value of expected key from query string //
-        Serial.println(" ... parameters");
-        if (httpd_query_key_value(buf, "length", param, sizeof(param)) == ESP_OK) {
-
-          int x = atoi(param);
-          if (x > 1 && x <= 3600 ) {
-            new_length = x;
-          }
-
-          ESP_LOGI(TAG, "Found URL query parameter => length=%s", param);
-
-        }
-        if (httpd_query_key_value(buf, "repeat", param, sizeof(param)) == ESP_OK) {
-          int x = atoi(param);
-          if (x >= 0  ) {
-            new_repeat = x;
-          }
-
-          ESP_LOGI(TAG, "Found URL query parameter => repeat=%s", param);
-        }
-        if (httpd_query_key_value(buf, "framesize", new_res, sizeof(new_res)) == ESP_OK) {
-          if (strcmp(new_res, "UXGA") == 0) {
-            new_framesize = 10;
-          } else if (strcmp(new_res, "SVGA") == 0) {
-            new_framesize = 7;
-          } else if (strcmp(new_res, "VGA") == 0) {
-            new_framesize = 6;
-          } else if (strcmp(new_res, "CIF") == 0) {
-            new_framesize = 5;
-          } else {
-            Serial.println("Only UXGA, SVGA, VGA, and CIF are valid!");
-
-          }
-          ESP_LOGI(TAG, "Found URL query parameter => framesize=%s", new_res);
-        }
-        if (httpd_query_key_value(buf, "quality", param, sizeof(param)) == ESP_OK) {
-
-          int x = atoi(param);
-          if (x > 1 && x <= 50) {
-            new_quality = x;
-          }
-
-          ESP_LOGI(TAG, "Found URL query parameter => quality=%s", param);
-        }
-
-        if (httpd_query_key_value(buf, "speed", param, sizeof(param)) == ESP_OK) {
-
-          int x = atoi(param);
-          if (x >= 1 && x <= 100) {
-            new_xspeed = x;
-          }
-
-          ESP_LOGI(TAG, "Found URL query parameter => speed=%s", param);
-        }
-
-        if (httpd_query_key_value(buf, "gray", param, sizeof(param)) == ESP_OK) {
-
-          int x = atoi(param);
-          if (x == 1 ) {
-            new_gray = x;
-          }
-
-          ESP_LOGI(TAG, "Found URL query parameter => gray=%s", param);
-        }
-
-        if (httpd_query_key_value(buf, "interval", param, sizeof(param)) == ESP_OK) {
-
-          int x = atoi(param);
-          if (x >= 1 && x <= 100000) {
-            new_interval = x;
-          }
-          ESP_LOGI(TAG, "Found URL query parameter => interval=%s", param);
-        }
-      }
-    }
-
-    s->set_quality(s, new_quality);
-    s->set_framesize(s, (framesize_t)new_framesize);
-    if (new_gray == 1) {
-      s->set_special_effect(s, 2);  // 0 regular, 2 grayscale
-    } else {
-      s->set_special_effect(s, 0);  // 0 regular, 2 grayscale
-    }
-
-    framesize = new_framesize;
-    capture_interval = new_interval;
-    xlength = new_length;
-    total_frames = new_length * 1000 / capture_interval;
-    repeat = new_repeat;
-    quality = new_quality;
-    xspeed = new_xspeed;
-    gray = new_gray;
-
-    do_fb();
-    //delay(1000);
-    do_fb();           // let camera warm up
-
-    do_start("Starting a new AVI");
-    httpd_resp_send(req, the_page, strlen(the_page));
-    return ESP_OK;
-
-  }
-}
-
-////////////////////////////////////////////////////////////////////////////////////
-void do_start(char *the_message) {
-
-  Serial.print("do_start "); Serial.println(the_message);
-
-  const char msg[] PROGMEM = R"rawliteral(<!doctype html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ESP32-CAM Video Recorder</title>
-</head>
-<body>
-<h1>ESP32-CAM Video Recorder v23</h1><br>
- <h2>Message is <font color="red">%s</font></h2><br>
- Recording = %d (1 is active)<br>
- Capture Interval = %d ms<br>
- Length = %d seconds<br>
- Quality = %d (5 best to 63 worst)<br>
- Framesize = %d (10 UXGA, 7 SVGA, 6 VGA, 5 CIF)<br>
- Repeat = %d<br>
- Speed = %d<br>
- Gray = %d<br><br>
-
-<br>
-<br><div id="image-container"></div>
-
-</body>
-</html>)rawliteral";
-
-
-  sprintf(the_page, msg, the_message, recording, capture_interval, capture_interval * total_frames / 1000, quality, framesize, repeat, xspeed, gray);
-  Serial.println(strlen(msg));
-
-  //Serial.println(msg);
-  //Serial.println(strlen(the_page));
-  //Serial.println(the_page);
-}
-
-////////////////////////////////////////////////////////////////////////////////////
-void do_stop(char *the_message) {
-
-  Serial.print("do_stop "); Serial.println(the_message);
-
-
-  const char msg[] PROGMEM = R"rawliteral(<!doctype html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ESP32-CAM Video Recorder</title>
-</head>
-<body>
-<h1>ESP32-CAM Video Recorder v23</h1><br>
- <h2>Message is <font color="red">%s</font></h2><br>
- <h2><a href="http://%s/">http://%s/</a></h2><br>
-   Information and viewfinder<br><br>
- <h2><a href="http://%s/start?framesize=VGA&length=1800&interval=200&quality=10&repeat=100&speed=1&gray=0">http://%s/start?framesize=VGA&length=1800&interval=200&quality=10&repeat=100&speed=1&gray=0</a></h2><br>
-   Gives you VGA 640x480, video of 1800 seconds (30 min), picture every 200 ms, jpeg quality 10, repeat for 100 more of the same and play back at 1x actual fps, and don't make it grayscale<br><br>      
-<h2><a href="http://%s/start?framesize=UXGA&length=1800&interval=2000&quality=10&repeat=100&speed=30&gray=0">UXGA 2 sec per frame, for 30 minutes repeat, 30x playback</a></h2><br>
-<h2><a href="http://%s/start?framesize=UXGA&length=1800&interval=200&quality=10&repeat=100&speed=1&gray=0">UXGA 5 fps for 30 minutes repeat</a></h2><br>
-<h2><a href="http://%s/start?framesize=CIF&length=1800&interval=50&quality=10&repeat=100&speed=1&gray=0">CIF 20 fps second for 30 minutes repeat</a></h2><br>
-
-<br>
-<br><div id="image-container"></div>
-
-</body>
-</html>)rawliteral";
-
-
-  sprintf(the_page, msg, the_message, localip, localip, localip, localip, localip, localip, localip);
-  
-  //Serial.println(strlen(msg));
-  //Serial.println(msg);
-  //Serial.println(strlen(the_page));
-  //Serial.println(the_page);
-
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////
-void do_status(char *the_message) {
-
-  Serial.print("do_status "); Serial.println(the_message);
-
-  const char msg[] PROGMEM = R"rawliteral(<!doctype html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ESP32-CAM Video Recorder</title>
-</head>
-<body>
-<h1>ESP32-CAM Video Recorder v23</h1><br>
- <h2>Message is <font color="red">%s</font></h2><br>
- Recording = %d (1 is active)<br>
- Frame %d of %d <br>
- Capture Interval = %d ms<br>
- Length = %d seconds<br>
- Quality = %d (5 best to 63 worst)<br>
- Framesize = %d (10 UXGA, 7 SVGA, 6 VGA, 5 CIF)<br>
- Repeat = %d<br>
- Playback Speed = %d<br>
- Gray = %d<br><br>
- Commands as follows for your ESP's ip address:<br><br>
- <h2><a href="http://%s/">http://%s/</a></h2><br>
-   Information and viewfinder<br><br>
- <h2><a href="http://%s/stop">http://%s/stop</a></h2><br>
-   You must "stop" before starting with new parameters<br><br>
- <br>
- <h2><a href="ftp://%s/">ftp://%s/</a></h2><br>
- Username: esp, Password: esp ... to download the files<br><br>
- Red LED on back of ESP will flash with every frame, and flash SOS if camera or sd card not working.<br>
-
-<br>
-Check camera position with the frames below every 5 seconds for 5 pictures  <br>
-Refresh page for more.<br>
-<br><div id="image-container"></div>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  var c = document.location.origin;
-  const ic = document.getElementById('image-container');  
-  var i = 1;
-  
-  var timing = 5000;
-
-  function loop() {
-    ic.insertAdjacentHTML('beforeend','<img src="'+`${c}/capture?_cb=${Date.now()}`+'">')
-    i = i + 1;
-    if ( i < 6 ) {
-      window.setTimeout(loop, timing);
-    }
-  }
-  loop();
-  
-})
-</script><br>
-</body>
-</html>)rawliteral";
-
-
-  //Serial.print("Serving web page, len= "); Serial.println(strlen(msg));
-  //Serial.println(msg);
-
-  sprintf(the_page, msg, the_message, recording, frames_so_far, total_frames, capture_interval, capture_interval * total_frames / 1000, quality, framesize, repeat, xspeed, gray, localip, localip, localip, localip, localip, localip);
-
-  //Serial.println(strlen(the_page));
-  //Serial.println(the_page);
-
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////
-static esp_err_t index_handler(httpd_req_t *req) {
-
-  do_status("Refresh Status");
-
-  httpd_resp_send(req, the_page, strlen(the_page));
-  return ESP_OK;
-}
-
-void startCameraServer() {
-  httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-
-  httpd_uri_t index_uri = {
-    .uri       = "/",
-    .method    = HTTP_GET,
-    .handler   = index_handler,
-    .user_ctx  = NULL
-  };
-  httpd_uri_t capture_uri = {
-    .uri       = "/capture",
-    .method    = HTTP_GET,
-    .handler   = capture_handler,
-    .user_ctx  = NULL
-  };
-
-  httpd_uri_t file_stop = {
-    .uri       = "/stop",
-    .method    = HTTP_GET,
-    .handler   = stop_handler,
-    .user_ctx  = NULL
-  };
-
-  httpd_uri_t file_start = {
-    .uri       = "/start",
-    .method    = HTTP_GET,
-    .handler   = start_handler,
-    .user_ctx  = NULL
-  };
-
-  if (httpd_start(&camera_httpd, &config) == ESP_OK) {
-    httpd_register_uri_handler(camera_httpd, &index_uri);
-    httpd_register_uri_handler(camera_httpd, &capture_uri);
-    httpd_register_uri_handler(camera_httpd, &file_start);
-    httpd_register_uri_handler(camera_httpd, &file_stop);
-  }
-}*/
