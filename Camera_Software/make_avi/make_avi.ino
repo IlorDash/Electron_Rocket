@@ -287,8 +287,9 @@ void setup() {
   gray = 0;                 // not gray
 
   quality = 10;             // quality 10 - pretty good.  Goes from 0..63, but 0-5 sometimes fails on bright scenery (jpg too big for ESP32CAM system)
-  capture_interval = 66;   //  milli-secconds per frame
-  total_frames = 937;       // total_frames x capture_interval = record_time
+  capture_interval = 33;   //  milli-secconds per frame
+ 
+  total_frames = 22500;       // total_frames x capture_interval = record_time
   
   xlength = total_frames * capture_interval / 1000;
 
