@@ -73,7 +73,12 @@
 #include "SD_MMC.h"
 #include "esp_vfs_fat.h"
 
-//#define LED_BUILTIN 4 //define for flash light
+// my variables
+#define LED_PIN 3
+#define BUTTON_PIN 13
+
+unsigned long lastFlash = 0;
+bool record = false;
 
 long current_millis;
 long last_capture_millis = 0;
@@ -211,6 +216,8 @@ void setup() {
 
   pinMode(33, OUTPUT);    // little red led on back of chip
   //pinMode (LED_BUILTIN, OUTPUT); // flash light
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(BUTTON_PIN, INPUT);
 
   digitalWrite(33, LOW);           // turn on the red LED on the back of chip
 
@@ -289,7 +296,7 @@ void setup() {
   quality = 10;             // quality 10 - pretty good.  Goes from 0..63, but 0-5 sometimes fails on bright scenery (jpg too big for ESP32CAM system)
   capture_interval = 33;   //  milli-secconds per frame
  
-  total_frames = 22500;       // total_frames x capture_interval = record_time
+  total_frames = 27273;       // total_frames x capture_interval = record_time
   
   xlength = total_frames * capture_interval / 1000;
 
@@ -559,6 +566,7 @@ void make_avi( ) {
             frame_cnt++;
 
             another_pic_avi();
+            
           }
         }
       }
@@ -737,8 +745,16 @@ static esp_err_t another_pic_avi() {
     Serial.print(" avg pic "); Serial.print( totalp / frame_cnt );
     Serial.print(" avg wrt "); Serial.print( totalw / frame_cnt );
 
-    Serial.print(" overtime "); Serial.print( overtime_count ); Serial.print(" "); Serial.print( 100.0 * overtime_count / frame_cnt, 1 ); Serial.println(" %");
-
+    Serial.print(" overtime "); Serial.print( overtime_count ); Serial.print(" "); Serial.print( 100.0 * overtime_count / frame_cnt, 1 ); Serial.println(" % lol");
+    if (millis() - lastFlash >= 1000)
+      {
+        if (digitalRead(LED_PIN) == HIGH) {         // check if the input is HIGH (button released)
+          digitalWrite(LED_PIN, LOW);  // turn LED OFF
+        } else {
+          digitalWrite(LED_PIN, HIGH);  // turn LED ON
+        }
+        lastFlash = millis();
+      }
   }
   bigdelta = millis();
 
@@ -896,7 +912,21 @@ long last_wakeup = 0;
 
 void loop()
 {
-  //digitalWrite(LED_BUILTIN, LOW); //flash light
-  make_avi();
-
+  if ((digitalRead(BUTTON_PIN) == HIGH) || (record == true))
+    {
+        make_avi();
+        record = true;
+        
+        if (millis() - lastFlash >= 2000)
+        {
+          lastFlash = millis();
+          digitalWrite(LED_PIN, HIGH); //flash light
+        } else if(millis() - lastFlash >= 1000)
+        {
+          digitalWrite(LED_PIN, LOW); //off light
+          lastFlash = millis();
+        }
+        
+        
+    }
 }
