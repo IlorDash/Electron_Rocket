@@ -1,6 +1,5 @@
 {
-    "port": "COM3",
-    "board": "esp32:esp32:esp32wrover",
-    "configuration": "PartitionScheme=huge_app,FlashMode=qio,FlashFreq=80,UploadSpeed=921600,DebugLevel=none",
-    "sketch": "Camera_Software\\make_avi\\make_avi.ino"
+    "port": "COM5",
+    "board": "arduino:avr:uno",
+    "sketch": "Camera_Software\\nrf24_Test_receiver\\nrf24_Test_receiver.ino"
 }
