@@ -1,5 +1,5 @@
 {
-    "port": "COM5",
+    "port": "COM4",
     "board": "arduino:avr:uno",
     "sketch": "Camera_Software\\nrf24_Test_receiver\\nrf24_Test_receiver.ino"
 }
