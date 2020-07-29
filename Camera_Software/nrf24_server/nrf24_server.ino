@@ -25,7 +25,11 @@ void setup()
   if (!nrf24.init())
     Serial.println("init failed");
   // Defaults after init are 2.402 GHz (channel 2), 2Mbps, 0dBm
+<<<<<<< HEAD
   if (!nrf24.setChannel(100))
+=======
+  if (!nrf24.setChannel(1))
+>>>>>>> e47018ff1f4fb3377e23dc1cc3474a1404daa911
     Serial.println("setChannel failed");
   if (!nrf24.setRF(RH_NRF24::DataRate250kbps, RH_NRF24::TransmitPower0dBm))
     Serial.println("setRF failed");
