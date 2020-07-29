@@ -141,6 +141,7 @@ int xspeed = 1;
 int xlength = 3;
 int gray = 0;
 
+int delay_between_captures = 0;
 
 #define AVIOFFSET 240 // AVI main header length
 
@@ -255,6 +256,7 @@ void setup() {
   }
 
   // camera init
+  
   cam_err = esp_camera_init(&config);
   if (cam_err != ESP_OK) {
     Serial.printf("Camera init failed with error 0x%x", cam_err);
@@ -264,6 +266,7 @@ void setup() {
 
   // SD camera init
   card_err = init_sdcard();
+  SD_MMC.begin("/sdcard", true);
   if (card_err != ESP_OK) {
     Serial.printf("SD Card init failed with error 0x%x", card_err);
     major_fail();
@@ -293,12 +296,13 @@ void setup() {
   xspeed = 1;               // playback at 1 x realtime
   gray = 0;                 // not gray
 
-  quality = 10;             // quality 10 - pretty good.  Goes from 0..63, but 0-5 sometimes fails on bright scenery (jpg too big for ESP32CAM system)
-  capture_interval = 33;   //  milli-secconds per frame
- 
-  total_frames = 27273;       // total_frames x capture_interval = record_time
+  quality = 50;             // quality 10 - pretty good.  Goes from 0..63, but 0-5 sometimes fails on bright scenery (jpg too big for ESP32CAM system)
+  capture_interval = 2;   //  milli-secconds per frame
+  delay_between_captures = 40;
+
+  total_frames = 500;       // total_frames x capture_interval = record_timea
   
-  xlength = total_frames * capture_interval / 1000;
+  xlength = total_frames * (capture_interval + delay_between_captures); // in ms
 
   newfile = 0;    // no file is open  // don't fiddle with this!
   recording = 1;  // start recording on reboot without sending a command
@@ -348,6 +352,7 @@ void major_fail() {
 
 static esp_err_t init_sdcard()
 {
+
   esp_err_t ret = ESP_FAIL;
   sdmmc_host_t host = SDMMC_HOST_DEFAULT();
   sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
@@ -532,7 +537,7 @@ void make_avi( ) {
             recording = 0;
           }
           
-        } else if ((millis() - startms) > (total_frames * capture_interval)) {
+        } else if ((millis() - startms) > xlength) {
 
           Serial.println (" "); Serial.println("Done capture for time");
           Serial.print("Time Elapsed: "); Serial.print(millis() - startms); Serial.print(" Frames: "); Serial.println(frame_cnt);
@@ -554,20 +559,20 @@ void make_avi( ) {
 
         } else  {                                                            // regular
 
-          current_millis = millis();
+          /*current_millis = millis();
 
-          if (current_millis - last_capture_millis > capture_interval) {                       // Take another picture - fixed interval
+          if (current_millis - last_capture_millis > capture_interval) {   */                    // Take another picture - fixed interval
 
             //if ((current_millis - startms) > (frame_cnt * capture_interval)) {                   // Take another picture - with catch up
 
-            last_capture_millis = millis();
+            //last_capture_millis = millis();
 
             frames_so_far = frames_so_far + 1;
             frame_cnt++;
 
             another_pic_avi();
             
-          }
+          //}
         }
       }
     }
@@ -909,12 +914,19 @@ static esp_err_t do_fb() {
 long wakeup;
 long last_wakeup = 0;
 
+int time_after_last_capture = 0;
 
 void loop()
 {
-  if ((digitalRead(BUTTON_PIN) == HIGH) || (record == true))
+  if (((digitalRead(BUTTON_PIN) == HIGH) || (record == true)) && (recording == 1))
     {
-        make_avi();
+        if ((millis() - time_after_last_capture) >= delay_between_captures)
+        {
+          make_avi();
+          time_after_last_capture = millis();
+        }
+        
+        
         record = true;
         
         if (millis() - lastFlash >= 2000)

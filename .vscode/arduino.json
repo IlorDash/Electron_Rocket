@@ -1,6 +1,6 @@
 {
     "port": "COM3",
     "board": "esp32:esp32:esp32wrover",
-    "configuration": "PartitionScheme=huge_app,FlashMode=qio,FlashFreq=80,UploadSpeed=921600,DebugLevel=none",
-    "sketch": "Camera_Software\\make_avi\\make_avi.ino"
+    "sketch": "Camera_Software\\make_avi\\make_avi.ino",
+    "configuration": "PartitionScheme=huge_app,FlashMode=qio,FlashFreq=80,UploadSpeed=921600,DebugLevel=none"
 }
