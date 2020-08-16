@@ -73,6 +73,29 @@
 #include "SD_MMC.h"
 #include "esp_vfs_fat.h"
 
+//nrf24
+#include  <SPI.h>
+#include "nRF24L01.h"
+#include "RF24.h"
+
+//vars for nrf24
+char msg[6] = "hello";
+bool radioNeedSetup = true;
+RF24 radio(2, 15, 14, 12, 13);
+const uint64_t _pipe = 0xE8E8F0F0E1LL;
+
+void radioSetup(){
+  radio.begin();
+  radio.setChannel(120);
+  radio.setPayloadSize(7);
+  radio.openWritingPipe(_pipe);
+  radio.setDataRate(RF24_250KBPS);
+  radio.setPALevel(RF24_PA_MAX);
+  radio.powerUp(); //начать работу
+  radio.stopListening();  //не слушаем радиоэфир, мы передатчик
+  radio.printDetails(); 
+}
+
 // my variables
 #define LED_PIN 3
 #define BUTTON_PIN 13
@@ -298,9 +321,9 @@ void setup() {
 
   quality = 50;             // quality 10 - pretty good.  Goes from 0..63, but 0-5 sometimes fails on bright scenery (jpg too big for ESP32CAM system)
   capture_interval = 2;   //  milli-secconds per frame
-  delay_between_captures = 40;
+  delay_between_captures = 45;
 
-  total_frames = 500;       // total_frames x capture_interval = record_timea
+  total_frames = 100;       // total_frames x capture_interval = record_timea
   
   xlength = total_frames * (capture_interval + delay_between_captures); // in ms
 
@@ -920,7 +943,7 @@ void loop()
 {
   if (((digitalRead(BUTTON_PIN) == HIGH) || (record == true)) && (recording == 1))
     {
-        if ((millis() - time_after_last_capture) >= delay_between_captures)
+        if ((millis() - time_after_last_capture) >= delay_between_captures)             //make_avi check
         {
           make_avi();
           time_after_last_capture = millis();
@@ -929,7 +952,7 @@ void loop()
         
         record = true;
         
-        if (millis() - lastFlash >= 2000)
+        if (millis() - lastFlash >= 1000)
         {
           lastFlash = millis();
           digitalWrite(LED_PIN, HIGH); //flash light
@@ -937,8 +960,17 @@ void loop()
         {
           digitalWrite(LED_PIN, LOW); //off light
           lastFlash = millis();
-        }
-        
-        
+        }       
     }
+    if(recording == 0){
+      if(radioNeedSetup){
+        radioSetup();
+        radioNeedSetup = false;
+      }
+      Serial.print("Sending ");
+      Serial.println(msg);
+      radio.write(msg, 6);
+      delay(10);
+    }
+    
 }

@@ -1,6 +1,5 @@
 {
-    "port": "COM3",
-    "board": "esp32:esp32:esp32wrover",
-    "sketch": "Camera_Software\\make_avi\\make_avi.ino",
-    "configuration": "PartitionScheme=huge_app,FlashMode=qio,FlashFreq=80,UploadSpeed=921600,DebugLevel=none"
+    "port": "COM4",
+    "board": "arduino:avr:uno",
+    "sketch": "Camera_Software\\Arduino_receive\\Arduino_receive.ino"
 }

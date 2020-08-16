@@ -8,10 +8,12 @@ const uint64_t _pipe = 0xE8E8F0F0E1LL;
 void setup(void) {
   Serial.begin(115200);
   radio.begin();
-  radio.setChannel(100);
+  radio.setChannel(120);
   radio.setPayloadSize(7);
   radio.setDataRate(RF24_250KBPS);
+  radio.setPALevel(RF24_PA_MAX);
   radio.openWritingPipe(_pipe);
+  radio.stopListening();
 }
 void loop(void) {
   Serial.println("send ...");
