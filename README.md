@@ -8,3 +8,4 @@ Model - 3D models of each detail
 Filter_xx - graphs of test of different noise filters  
 Real-Rockets_RD1-20-5 - profile of Real Rockets engine for OpenRocket  
 Rocket_project - OpenRocket file of my rocket configuration  
+rocket_fly_test - data and graph of completed fly test  
